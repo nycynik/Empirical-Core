@@ -117,6 +117,10 @@ class User < ActiveRecord::Base
     end
   end
 
+  def auditor?
+    self.flags.include?('auditor')
+  end
+
   def subscription_authority_level(subscription_id)
     subscription = Subscription.find subscription_id
     if subscription.purchaser_id == self.id
