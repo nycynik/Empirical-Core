@@ -15,7 +15,6 @@ EmpiricalGrammar::Application.routes.draw do
       delete 'destroy_all', on: :collection
     end
   end
-
   get '/classrooms/:classroom', to: 'students#index'
   get '/add_classroom', to: 'students#index'
 
@@ -357,6 +356,7 @@ EmpiricalGrammar::Application.routes.draw do
     get "/google_email_mismatch" => 'google#google_email_mismatch'
     get "/google_oauth2/callback" => 'google#google'
     get '/clever/callback', to: 'clever#clever'
+    get '/schoology/login', to: 'schoology#login'
   end
 
   get '/clever/auth_url_details', to: 'clever#auth_url_details'
