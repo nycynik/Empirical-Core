@@ -356,7 +356,9 @@ EmpiricalGrammar::Application.routes.draw do
     get "/google_email_mismatch" => 'google#google_email_mismatch'
     get "/google_oauth2/callback" => 'google#google'
     get '/clever/callback', to: 'clever#clever'
-    get '/schoology/login', to: 'schoology#login'
+    post '/schoology/login', to: 'schoology#login'
+    get '/schoology/callback', to: 'schoology#callback'
+    post '/schoology/callback', to: 'schoology#callback'
   end
 
   get '/clever/auth_url_details', to: 'clever#auth_url_details'

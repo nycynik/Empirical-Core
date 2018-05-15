@@ -315,6 +315,7 @@ GEM
     notiffany (0.1.1)
       nenv (~> 0.1)
       shellany (~> 0.0)
+    oauth (0.5.4)
     oauth2 (0.9.4)
       faraday (>= 0.8, < 0.10)
       jwt (~> 1.0)
@@ -728,9 +729,11 @@ DEPENDENCIES
   lograge
   newrelic_rpm
   nokogiri
+  oauth
   omniauth
   omniauth-clever
   omniauth-google-oauth2
+  omniauth-oauth2
   paperclip
   parallel_tests (~> 2.21.3)
   parslet
