@@ -16,7 +16,7 @@ pipeline {
         stage('Install Postgres') {
           steps {
             sh 'apt-get update'
-            sh 'apt-cache policy postgresql'
+            sh 'apt-cache policy postgresql-10'
             sh 'apt-get install postgresql'
           }
         }
