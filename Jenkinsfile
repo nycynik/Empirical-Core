@@ -16,14 +16,14 @@ apt-get install -y software-properties-common
 
 # add ruby deps, rbenv
 ## ruby dependencies
-apt-get install autoconf bison build-essential libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm3 libgdbm-dev
+apt-get install -y autoconf bison build-essential libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm3 libgdbm-dev
 git clone https://github.com/rbenv/rbenv.git ~/.rbenv
 echo \'export PATH="$HOME/.rbenv/bin:$PATH"\' >> ~/.bashrc
 echo \'eval "$(rbenv init -)"\' >> ~/.bashrc
 source ~/.bash_profile
 
 # install ruby version(s)
-rbenv install 2.3.1
+rbenv install -y 2.3.1
 
 # set global ruby version
 rbenv global 2.3.1'''
