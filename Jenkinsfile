@@ -8,7 +8,10 @@ pipeline {
   stages {
     stage('config system') {
       steps {
-        sh '''echo "Starting system config..."
+        sh '''# replace shell w bash
+rm /bin/sh && ln -s /bin/bash /bin/sh
+
+echo "Starting system config..."
 apt-get update
 apt-get install -y wget
 apt-get install -y software-properties-common
