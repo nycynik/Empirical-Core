@@ -15,7 +15,7 @@ pipeline {
         }
         stage('Install Postgres') {
           steps {
-            sh 'sudo apt-get update'
+            sh 'apt-get update'
             sh 'apt-get install postgresql-10.1 '
           }
         }
