@@ -16,7 +16,8 @@ pipeline {
         stage('Install Postgres') {
           steps {
             sh 'apt-get update'
-            sh 'apt-get install postgresql-10'
+            sh 'apt-cache policy postgresql'
+            sh 'apt-get install postgresql'
           }
         }
         stage('Install NVM') {
