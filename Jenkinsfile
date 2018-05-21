@@ -13,6 +13,8 @@ apt-get update
 apt-get install -y wget
 apt-get install -y software-properties-common
 
+# install git
+apt-get install -y git
 
 # add ruby deps, rbenv
 ## ruby dependencies
