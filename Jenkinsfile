@@ -33,7 +33,7 @@ wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | \\
 apt-get update
 
 # install pg
-apt-get install -y postgres-10'''
+apt-get install -y postgresql-10'''
           }
         }
       }
