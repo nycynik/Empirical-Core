@@ -15,6 +15,7 @@ pipeline {
         }
         stage('Install Postgres') {
           steps {
+            sh 'apt-get install software-properties-common'
             sh 'add-apt-repository \'deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main\''
             sh 'wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add '
             sh 'apt-get update'
