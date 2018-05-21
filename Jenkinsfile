@@ -20,7 +20,10 @@ pipeline {
         }
         stage('Install Postgres') {
           steps {
-            sh '''
+            sh '''# Make sure add-apt-repo is installed
+apt-get install -y software-properties-common
+
+
 # add postgres10 repo
 add-apt-repository \'deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main\'
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | \\
@@ -29,7 +32,7 @@ apt-get update
 
 
 # install pg
-apt-get install postgres-10'''
+apt-get install -y postgres-10'''
           }
         }
       }
