@@ -11,7 +11,15 @@ pipeline {
         sh '''echo "Starting system config..."
 apt-get update
 apt-get install -y wget
-apt-get install -y software-properties-common'''
+apt-get install -y software-properties-common
+
+
+# add ruby
+apt-add-repository ppa:brightbox/ruby-ng
+apt-get update
+apt-get install ruby2.3
+
+'''
       }
     }
     stage('install services') {
