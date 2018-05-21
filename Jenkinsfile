@@ -20,7 +20,11 @@ pipeline {
         }
         stage('Install Postgres') {
           steps {
-            sh '''# Make sure add-apt-repo is installed
+            sh '''# Make sure ubuntu is up-to date [IMPORTANT!]
+apt-get update
+
+# Make sure add-apt-repo is installed
+# will fail if apt-get update hasn\'t run
 apt-get install -y software-properties-common
 
 
