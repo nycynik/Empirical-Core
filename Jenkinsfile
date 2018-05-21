@@ -17,7 +17,7 @@ apt-get install -y software-properties-common
 # add ruby
 apt-add-repository ppa:brightbox/ruby-ng
 apt-get update
-apt-get install -y ruby2.3
+apt-get install -y ruby2.3.1
 
 '''
       }
