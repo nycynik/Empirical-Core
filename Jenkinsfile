@@ -8,7 +8,10 @@ pipeline {
   stages {
     stage('config system') {
       steps {
-        sh 'echo hi'
+        sh '''echo "Starting system config..."
+apt-get update
+apt-get install -y wget
+apt-get install -y software-properties-common'''
       }
     }
     stage('install services') {
@@ -20,12 +23,7 @@ pipeline {
         }
         stage('Install Postgres') {
           steps {
-            sh '''# Make sure ubuntu is up-to date [IMPORTANT!]
-apt-get update
-
-# Make sure add-apt-repo is installed
-# will fail if apt-get update hasn\'t run
-apt-get install -y software-properties-common
+            sh '''echo "Beginning PG installation"
 
 
 # add postgres10 repo
@@ -33,7 +31,6 @@ add-apt-repository \'deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg ma
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | \\
   apt-key add -
 apt-get update
-
 
 # install pg
 apt-get install -y postgres-10'''
