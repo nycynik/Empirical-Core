@@ -37,5 +37,10 @@ pipeline {
         sh 'bundle install'
       }
     }
+    stage('install services') {
+      steps {
+        echo 'Hi'
+      }
+    }
   }
 }
