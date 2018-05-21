@@ -1,7 +1,7 @@
 pipeline {
   agent {
     docker {
-      image 'ruby:2.3.1'
+      image 'ubuntu:16.04'
     }
 
   }
