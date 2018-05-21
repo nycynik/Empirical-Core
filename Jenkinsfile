@@ -48,7 +48,8 @@ apt-get install -y postgresql-10'''
     }
     stage('Build') {
       steps {
-        sh 'bundle install'
+        sh '''gem install bundler
+bundle install'''
       }
     }
   }
