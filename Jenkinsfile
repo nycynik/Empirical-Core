@@ -32,14 +32,14 @@ pipeline {
         }
       }
     }
-    stage('Build') {
-      steps {
-        sh 'bundle install'
-      }
-    }
     stage('install services') {
       steps {
         echo 'Hi'
+      }
+    }
+    stage('Build') {
+      steps {
+        sh 'bundle install'
       }
     }
   }
