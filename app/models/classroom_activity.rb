@@ -41,8 +41,8 @@ class ClassroomActivity < ActiveRecord::Base
     end
   end
 
-  def is_valid_for_google_announcement?
-    !!self.classroom.google_classroom_id
+  def is_valid_for_google_announcement_with_specific_user?(user)
+    !!self.classroom.google_classroom_id && !!user.google_id
   end
 
   def generate_activity_url

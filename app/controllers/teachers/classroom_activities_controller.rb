@@ -27,7 +27,7 @@ class Teachers::ClassroomActivitiesController < ApplicationController
       if @classroom_activity.update(locked: false, pinned: true)
         find_or_create_lesson_activity_sessions_for_classroom
         PusherLessonLaunched.run(@classroom_activity.classroom)
-        if is_valid_for_google_announcement?
+        if @classroom_activity.is_valid_for_google_announcement_with_specific_user?(current_user)
           session[:lesson_url] = @classroom_activity.generate_activity_url
           return post_to_google_classroom
         end
@@ -108,10 +108,6 @@ private
     else
       "#{lesson.classification_form_url}customize/#{lesson.uid}?&classroom_activity_id=#{@classroom_activity.id}"
     end
-  end
-
-  def is_valid_for_google_announcement?
-    @classroom_activity.is_valid_for_google_announcement? && current_user.google_id
   end
 
   def post_to_google_classroom
