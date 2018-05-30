@@ -111,7 +111,7 @@ private
   end
 
   def post_to_google_classroom
-    access_token = session[:google_access_token]
+    access_token = current_user.auth_credential.access_token
     google_response = GoogleIntegration::Announcements.post_announcement(access_token, @classroom_activity, @classroom_activity.classroom.google_classroom_id)
     if google_response == 'UNAUTHENTICATED'
       session[:google_redirect] = request.path
