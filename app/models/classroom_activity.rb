@@ -19,7 +19,7 @@ class ClassroomActivity < ActiveRecord::Base
 
   before_validation :check_pinned
   before_save :check_for_assign_on_join_and_update_students_array_if_true
-  after_create :lock_if_lesson
+  after_create :lock_if_lesson, :post_to_google_if_valid
   after_save :teacher_checkbox, :hide_appropriate_activity_sessions, :update_lessons_cache
 
   def assigned_students
@@ -43,6 +43,10 @@ class ClassroomActivity < ActiveRecord::Base
 
   def is_valid_for_google_announcement_with_specific_user?(user)
     !!self.classroom.google_classroom_id && !!user.google_id
+  end
+
+  def is_valid_for_google_announcement_with_owner?
+    !!self.classroom.google_classroom_id && !!self.classroom.owner.google_id
   end
 
   def generate_activity_url
@@ -256,6 +260,15 @@ class ClassroomActivity < ActiveRecord::Base
   end
 
   private
+
+  def post_to_google_if_valid
+    if is_valid_for_google_announcement_with_owner?
+      owner = classroom.owner
+      if GoogleIntegration::RefreshAccessToken.new(owner)
+        GoogleIntegration::Announcements.post_announcement(owner.auth_credential.access_token, self, classroom.google_classroom_id)
+      end
+    end
+  end
 
   def lock_if_lesson
     if ActivityClassification.find_by_id(activity&.activity_classification_id)&.key == 'lessons'
