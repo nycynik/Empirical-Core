@@ -422,6 +422,43 @@ ALTER SEQUENCE public.announcements_id_seq OWNED BY public.announcements.id;
 
 
 --
+-- Name: auth_credentials; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.auth_credentials (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    refresh_token character varying,
+    expires_at timestamp without time zone,
+    "timestamp" timestamp without time zone,
+    access_token character varying NOT NULL,
+    provider character varying NOT NULL,
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone
+);
+
+
+--
+-- Name: auth_credentials_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.auth_credentials_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: auth_credentials_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.auth_credentials_id_seq OWNED BY public.auth_credentials.id;
+
+
+--
 -- Name: authors; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2092,7 +2129,8 @@ CREATE TABLE public.users (
     last_active timestamp without time zone,
     stripe_customer_id character varying,
     flags character varying[] DEFAULT '{}'::character varying[] NOT NULL,
-    title character varying
+    title character varying,
+    refresh_token character varying
 );
 
 
@@ -2176,6 +2214,13 @@ ALTER TABLE ONLY public.admin_accounts_teachers ALTER COLUMN id SET DEFAULT next
 --
 
 ALTER TABLE ONLY public.announcements ALTER COLUMN id SET DEFAULT nextval('public.announcements_id_seq'::regclass);
+
+
+--
+-- Name: auth_credentials id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_credentials ALTER COLUMN id SET DEFAULT nextval('public.auth_credentials_id_seq'::regclass);
 
 
 --
@@ -2584,6 +2629,14 @@ ALTER TABLE ONLY public.admin_accounts_teachers
 
 ALTER TABLE ONLY public.announcements
     ADD CONSTRAINT announcements_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: auth_credentials auth_credentials_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_credentials
+    ADD CONSTRAINT auth_credentials_pkey PRIMARY KEY (id);
 
 
 --
@@ -3122,6 +3175,34 @@ CREATE INDEX index_admin_accounts_teachers_on_teacher_id ON public.admin_account
 --
 
 CREATE INDEX index_announcements_on_start_and_end ON public.announcements USING btree (start, "end" DESC);
+
+
+--
+-- Name: index_auth_credentials_on_access_token; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_auth_credentials_on_access_token ON public.auth_credentials USING btree (access_token);
+
+
+--
+-- Name: index_auth_credentials_on_provider; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_auth_credentials_on_provider ON public.auth_credentials USING btree (provider);
+
+
+--
+-- Name: index_auth_credentials_on_refresh_token; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_auth_credentials_on_refresh_token ON public.auth_credentials USING btree (refresh_token);
+
+
+--
+-- Name: index_auth_credentials_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_auth_credentials_on_user_id ON public.auth_credentials USING btree (user_id);
 
 
 --
@@ -3727,6 +3808,13 @@ CREATE INDEX index_users_on_google_id ON public.users USING btree (google_id);
 
 
 --
+-- Name: index_users_on_refresh_token; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_users_on_refresh_token ON public.users USING btree (refresh_token);
+
+
+--
 -- Name: index_users_on_role; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3968,6 +4056,14 @@ ALTER TABLE ONLY public.sales_contacts
 
 ALTER TABLE ONLY public.sales_stages
     ADD CONSTRAINT fk_rails_e5da9d6c2d FOREIGN KEY (sales_stage_type_id) REFERENCES public.sales_stage_types(id);
+
+
+--
+-- Name: auth_credentials fk_rails_f92a275310; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_credentials
+    ADD CONSTRAINT fk_rails_f92a275310 FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -4525,4 +4621,8 @@ INSERT INTO schema_migrations (version) VALUES ('20180417202537');
 INSERT INTO schema_migrations (version) VALUES ('20180418185045');
 
 INSERT INTO schema_migrations (version) VALUES ('20180517045137');
+
+INSERT INTO schema_migrations (version) VALUES ('20180521205027');
+
+INSERT INTO schema_migrations (version) VALUES ('20180530145153');
 

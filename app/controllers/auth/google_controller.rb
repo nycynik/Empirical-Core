@@ -1,11 +1,8 @@
 class Auth::GoogleController < ApplicationController
 
-  after_action :set_google_id
-
   def google
-    access_token = request.env['omniauth.auth']['credentials']['token']
-    session[:google_access_token] = access_token
-    name, email, google_id = GoogleIntegration::Profile.fetch_name_email_and_google_id(access_token)
+    @access_token = request.env['omniauth.auth']['credentials']['token']
+    name, email, google_id = GoogleIntegration::Profile.fetch_name_email_and_google_id(@access_token)
     if redirect_request(request)
       # If we are here it is simply to get a new access token. Ultimately, we should
       # set this up for refresh tokens at which point, this will no longer be necessary.
@@ -17,20 +14,13 @@ class Auth::GoogleController < ApplicationController
       session[:google_redirect] = nil
        redirect_to redirect_route and return
     end
-
     if (session[:role].present? && User.where(google_id: google_id).none?) || (current_user && !current_user.signed_up_with_google)
       # If the above is true, the user is either currently signing up and has session[:role] or
       # the user is extant and is about to register with google for the first time
-      register_with_google(name, email, session[:role], access_token, google_id)
+      register_with_google(name, email, session[:role], @access_token, google_id)
     else
       # This is only being accessed by when a user logs in with google
-      google_login(email, access_token, google_id)
-    end
-  end
-
-  def get_new_token_and_redirect
-    if get_new_token['status'] == 200
-      redirect_to params[:redirect_route]
+      google_login(email, @access_token, google_id)
     end
   end
 
@@ -42,20 +32,20 @@ class Auth::GoogleController < ApplicationController
   private
 
   def get_new_token
+    # https://stackoverflow.com/questions/12792326/how-do-i-refresh-my-google-oauth2-access-token-using-my-refresh-token#14491560
     # TODO: this can be made much better with the psuedo-code block commented out below
     # if !current_user.refresh_token
     #       then we will need to tell the js to re-auth them via #google, where they will need to manually sign in.
     # elsif current_user.google_token_expires_at < DateTime.now
     #      then we need to use refresh token as shown below
     # end
+
     if current_user.refresh_token
       response = HTTParty.post('https://accounts.google.com/o/oauth2/token', refresh_token_options)
       if response.code == 200
-        current_user.update(google_token_expires_at: DateTime.now + response.parsed_response['expires_in'].seconds)
-        session[:google_access_token] = response.parsed_response['access_token']
-        # TODO: update expiration time here -- we can use the same auth token until such time
-        # user.expires_at = DateTime.now + @response.parsed_response['expires_in'].seconds
-        user.save
+        @expires_at = DateTime.now + response.parsed_response['expires_in'].seconds
+        @access_token = response.parsed_response['access_token']
+        find_or_initialize_and_update_auth_credential
         {status: 200}
       else
         {status: 401, message: 'unable to use refresh token'}
@@ -90,13 +80,11 @@ class Auth::GoogleController < ApplicationController
   end
 
   def set_refresh_token
-    @refresh_token = request.env['omniauth.auth']['credentials']['refresh_token']
+    @refresh_token ||= request.env['omniauth.auth']['credentials']['refresh_token']
   end
 
-  def set_google_id
-    if current_user
-      $redis.set("user_id:#{current_user.id}_google_access_token", {token: session[:google_access_token]})
-    end
+  def set_expires_at
+    @expires_at ||= DateTime.strptime(request.env['omniauth.auth']['credentials']['expires_at'].to_s, '%s')
   end
 
   def redirect_request(request)
@@ -111,9 +99,9 @@ class Auth::GoogleController < ApplicationController
     if user.present?
       user.google_id ? nil : user.update(google_id: google_id)
       sign_in(user)
-      update_refresh_token
+      find_or_initialize_and_update_auth_credential
       TestForEarnedCheckboxesWorker.perform_async(user.id)
-      GoogleStudentImporterWorker.perform_async(current_user.id, session[:google_access_token])
+      GoogleStudentImporterWorker.perform_async(current_user.id, access_token)
        redirect_to profile_path and return
     else
        redirect_to new_account_path and return
@@ -122,10 +110,10 @@ class Auth::GoogleController < ApplicationController
 
   def new_google_user(name, email, role, access_token, google_id, user)
     @user = user
-    set_refresh_token
     @user.attributes = {signed_up_with_google: true, name: name, role: role, google_id: google_id, refresh_token: @refresh_token}
     if @user.save
       sign_in(@user)
+      find_or_initialize_and_update_auth_credential
       ip = request.remote_ip
       AccountCreationCallbacks.new(@user, ip).trigger
       @user.subscribe_to_newsletter
@@ -161,6 +149,7 @@ class Auth::GoogleController < ApplicationController
          redirect_to new_account_path and return
       else
         @user.update(signed_up_with_google: true, google_id: google_id)
+        find_or_initialize_and_update_auth_credential
         if request.referer && URI(request.referer) &&
           (URI(request.referer).path == '/teachers/classrooms/dashboard' || URI(request.referer).path == '/teachers/classrooms/new')
           # if they are hitting this route through the dashboard or new classrooms page, they should be brought to the google sync page
@@ -169,6 +158,14 @@ class Auth::GoogleController < ApplicationController
          redirect_to profile_path and return
       end
     end
+  end
+
+  def find_or_initialize_and_update_auth_credential
+    @auth = AuthCredential.find_or_initialize_by(user_id: current_user.id, provider: 'google')
+    set_refresh_token
+    set_expires_at
+    creds = {refresh_token: @refresh_token, access_token: @access_token}.delete_if{ |k, v| v.empty? }
+    @auth.update_attributes(creds)
   end
 
 end

@@ -11,6 +11,7 @@ class User < ActiveRecord::Base
 
 
   has_secure_password validations: false
+  has_one :auth_credential
   has_many :user_subscriptions
   has_many :subscriptions, through: :user_subscriptions
   has_many :checkboxes
@@ -105,6 +106,8 @@ class User < ActiveRecord::Base
   def school_poc?
     self.flags.include?('school_point_of_contact')
   end
+
+
 
   def redeem_credit
     balance = credit_transactions.sum(:amount)
