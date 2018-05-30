@@ -28,12 +28,57 @@ class Auth::GoogleController < ApplicationController
     end
   end
 
+  def get_new_token_and_redirect
+    if get_new_token['status'] == 200
+      redirect_to params[:redirect_route]
+    end
+  end
+
   def google_email_mismatch
     @google_email = session[:google_email] || ''
     render 'accounts/google_mismatch'
   end
 
   private
+
+  def get_new_token
+    # TODO: this can be made much better with the psuedo-code block commented out below
+    # if !current_user.refresh_token
+    #       then we will need to tell the js to re-auth them via #google, where they will need to manually sign in.
+    # elsif current_user.google_token_expires_at < DateTime.now
+    #      then we need to use refresh token as shown below
+    # end
+    if current_user.refresh_token
+      response = HTTParty.post('https://accounts.google.com/o/oauth2/token', refresh_token_options)
+      if response.code == 200
+        current_user.update(google_token_expires_at: DateTime.now + response.parsed_response['expires_in'].seconds)
+        session[:google_access_token] = response.parsed_response['access_token']
+        # TODO: update expiration time here -- we can use the same auth token until such time
+        # user.expires_at = DateTime.now + @response.parsed_response['expires_in'].seconds
+        user.save
+        {status: 200}
+      else
+        {status: 401, message: 'unable to use refresh token'}
+      end
+    elsif !current_user.google_id
+      {status: 401, message: 'user does not have google id'}
+    end
+
+  end
+
+  def refresh_token_options
+    @options = {
+      body: {
+        client_id: ENV["GOOGLE_CLIENT_ID"],
+        client_secret: ENV["GOOGLE_CLIENT_SECRET"],
+        refresh_token: current_user.refresh_token,
+        grant_type: 'refresh_token'
+      },
+      headers: {
+        'Content-Type' => 'application/x-www-form-urlencoded'
+      }
+    }
+  end
 
   def update_refresh_token
     @refresh_token ||= set_refresh_token
