@@ -116,7 +116,7 @@ class Auth::GoogleController < ApplicationController
     @auth = AuthCredential.find_or_initialize_by(user_id: current_user.id, provider: 'google')
     set_refresh_token
     set_expires_at
-    creds = {refresh_token: @refresh_token, access_token: @access_token}.delete_if{ |k, v| v.empty? }
+    creds = {refresh_token: @refresh_token, access_token: @access_token}.delete_if{ |k, v| v.nil? }
     @auth.update_attributes(creds)
   end
 
