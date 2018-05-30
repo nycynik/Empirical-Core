@@ -12,7 +12,7 @@ class Auth::GoogleController < ApplicationController
       # the google_redirect
       redirect_route = session[:google_redirect]
       session[:google_redirect] = nil
-       redirect_to redirect_route and return
+      redirect_to redirect_route and return
     end
     if (session[:role].present? && User.where(google_id: google_id).none?) || (current_user && !current_user.signed_up_with_google)
       # If the above is true, the user is either currently signing up and has session[:role] or
@@ -30,54 +30,6 @@ class Auth::GoogleController < ApplicationController
   end
 
   private
-
-  def get_new_token
-    # https://stackoverflow.com/questions/12792326/how-do-i-refresh-my-google-oauth2-access-token-using-my-refresh-token#14491560
-    # TODO: this can be made much better with the psuedo-code block commented out below
-    # if !current_user.refresh_token
-    #       then we will need to tell the js to re-auth them via #google, where they will need to manually sign in.
-    # elsif current_user.google_token_expires_at < DateTime.now
-    #      then we need to use refresh token as shown below
-    # end
-
-    if current_user.refresh_token
-      response = HTTParty.post('https://accounts.google.com/o/oauth2/token', refresh_token_options)
-      if response.code == 200
-        @expires_at = DateTime.now + response.parsed_response['expires_in'].seconds
-        @access_token = response.parsed_response['access_token']
-        find_or_initialize_and_update_auth_credential
-        {status: 200}
-      else
-        {status: 401, message: 'unable to use refresh token'}
-      end
-    elsif !current_user.google_id
-      {status: 401, message: 'user does not have google id'}
-    end
-
-  end
-
-  def refresh_token_options
-    @options = {
-      body: {
-        client_id: ENV["GOOGLE_CLIENT_ID"],
-        client_secret: ENV["GOOGLE_CLIENT_SECRET"],
-        refresh_token: current_user.refresh_token,
-        grant_type: 'refresh_token'
-      },
-      headers: {
-        'Content-Type' => 'application/x-www-form-urlencoded'
-      }
-    }
-  end
-
-  def update_refresh_token
-    @refresh_token ||= set_refresh_token
-    if !@refresh_token
-       redirect_to '/auth/google_oauth2?prompt=consent' and return
-    elsif @refresh_token && current_user.refresh_token != @refresh_token
-      current_user.update(refresh_token: @refresh_token)
-    end
-  end
 
   def set_refresh_token
     @refresh_token ||= request.env['omniauth.auth']['credentials']['refresh_token']
