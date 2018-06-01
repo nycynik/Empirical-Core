@@ -19,7 +19,7 @@ class ClassroomActivity < ActiveRecord::Base
 
   before_validation :check_pinned
   before_save :check_for_assign_on_join_and_update_students_array_if_true
-  after_create :lock_if_lesson, :post_to_google_if_valid
+  after_create :lock_if_lesson
   after_save :teacher_checkbox, :hide_appropriate_activity_sessions, :update_lessons_cache
 
   def assigned_students

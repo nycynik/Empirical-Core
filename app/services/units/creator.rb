@@ -35,14 +35,18 @@ module Units::Creator
     # create all necessary activity sessions
     classrooms.each do |classroom|
       product = activities_data.product([classroom[:id].to_i]).uniq
+      binding.pry
       product.each do |pair|
         activity_data, classroom_id = pair
-        unit.classroom_activities.create!(activity_id: activity_data[:id],
+        new_ca = unit.classroom_activities.create!(activity_id: activity_data[:id],
                                           due_date: activity_data[:due_date],
                                           classroom_id: classroom_id,
                                           assigned_student_ids: classroom[:student_ids],
                                           assign_on_join: classroom[:assign_on_join]
                                         )
+        # if new_ca
+        #   puts ''
+        # end
       end
     end
     unit.email_lesson_plan

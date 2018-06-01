@@ -4,19 +4,21 @@ class GoogleIntegration::Announcements
 
   def self.post_unit_to_valid_classrooms(unit)
     classroom_activities_sample = unit.classroom_activities.group_by{|ca| ca.activity_id}.values.first
+    binding.pry
     classroom_activities_sample.each do |ca|
       if ca.is_valid_for_google_announcement_with_owner?
         owner = ca.classroom.owner
         GoogleIntegration::RefreshAccessToken.new(owner).refresh
-        new(owner.auth_credential.access_token, ca, ca.classroom.google_classroom_id).post
+        new(owner.auth_credential.access_token, ca, ca.classroom.google_classroom_id, unit.name).post
       end
     end
   end
 
-  def initialize(access_token, classroom_activity, google_course_id)
+  def initialize(access_token, classroom_activity, google_course_id, unit_name=nil )
     @access_token = access_token
     @classroom_activity = classroom_activity
     @google_course_id = google_course_id
+    @unit_name = unit_name
   end
 
   def post
@@ -59,8 +61,13 @@ class GoogleIntegration::Announcements
   end
 
   def base_body
+    if @unit_name
+      text = "New Unit: #{@unit_name} #{ENV["DEFAULT_URL"]}"
+    else
+      text = "#{@classroom_activity.activity.name}: #{@classroom_activity.generate_activity_url}"
+    end
     {
-      text: "#{@classroom_activity.activity.name}: #{@classroom_activity.generate_activity_url}"
+      text: text
     }
   end
 

@@ -6,10 +6,12 @@ class Auth::GoogleController < ApplicationController
     if redirect_request(request)
       # If we are here it is simply to get a new access token. Ultimately, we should
       # set this up for refresh tokens at which point, this will no longer be necessary.
+       find_or_initialize_and_update_auth_credential
        redirect_to URI(request.referer).path and return
     elsif session[:google_redirect]
       # todo: we should be using this instead of the redirect request above. Then, make an afterhook that will delete
       # the google_redirect
+      find_or_initialize_and_update_auth_credential
       redirect_route = session[:google_redirect]
       session[:google_redirect] = nil
       redirect_to redirect_route and return

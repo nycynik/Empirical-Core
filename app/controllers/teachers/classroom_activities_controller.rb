@@ -28,7 +28,6 @@ class Teachers::ClassroomActivitiesController < ApplicationController
         find_or_create_lesson_activity_sessions_for_classroom
         PusherLessonLaunched.run(@classroom_activity.classroom)
         if @classroom_activity.is_valid_for_google_announcement_with_specific_user?(current_user)
-          session[:lesson_url] = @classroom_activity.generate_activity_url
           return post_to_google_classroom
         end
         redirect_to lesson_url(lesson) and return
@@ -111,6 +110,7 @@ private
   end
 
   def post_to_google_classroom
+    # GoogleIntegration::RefreshAccessToken.new(owner).refresh
     access_token = current_user.auth_credential.access_token
     google_response = GoogleIntegration::Announcements.new(
       access_token,
