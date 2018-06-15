@@ -77,11 +77,11 @@ pipeline {
               }
               else if (mergingInto == 'fake-master') {
                 echo "Automatically deploying fake-master to production..."
+                echo "Warning: This behavior is not yet enabled with this pipeline."
               }
             }
           }
           else {
-
             echo "Your branch is not fake-master, fake-develop, an open PR, or a branch with an open PR.  Nothing to do."
           }
         }
