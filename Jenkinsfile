@@ -1,24 +1,23 @@
 pipeline {
   agent any
-
   stages {
     stage('start-postgres-docker') {
       steps {
         echo 'Starting postgres docker container...'
         script {
-          sh 'docker network create jnk-net'
-          sh 'docker run --name lms-testdb --network jnk-net -d postgres:10.1'
+          sh "docker network create jnk-net${env.BUILD_TAG}"
+          sh "docker run --name lms-testdb${env.BUILD_TAG} --network jnk-net${env.BUILD_TAG} -d postgres:10.1"
         }
       }
     }
     stage('test') {
       parallel {
-        stage('test-QuillLMS-ruby') {
+        stage('test-lms-ruby') {
           agent {
             dockerfile {
               filename 'services/QuillJenkins/agents/QuillLMS/Dockerfile.test-ruby'
               dir '.'
-              args '-u root:sudo -v $HOME/workspace/myproject:/myproject --name lms-webapp --network jnk-net'
+              args "-u root:sudo -v \$HOME/workspace/myproject:/myproject --name test-lms-ruby${env.BUILD_TAG} --network jnk-net${env.BUILD_TAG}"
             }
           }
           environment {
@@ -34,7 +33,8 @@ pipeline {
             dir(path: 'services/QuillLMS') {
               echo 'Rspec:'
               echo 'Setting up rspec...'
-              sh 'cp config/database.yml.jenkins config/database.yml'
+              //sh 'cp config/database.yml.jenkins config/database.yml'
+              sh "config/generate_databaseyml.sh ${env.BUILD_TAG} config/database.yml" 
               echo 'Running rspec'
               sh 'bundle exec rake parallel:create'
               sh 'bundle exec rake parallel:load_structure'
@@ -68,12 +68,12 @@ pipeline {
             }
           }
         }
-        stage('test-QuillComprehension') {
+        stage('test-comprehension') {
           agent {
             dockerfile {
               filename 'services/QuillJenkins/agents/QuillComprehension/Dockerfile.test-ruby'
               dir '.'
-              args '-u root:sudo -v $HOME/workspace/myproject:/myproject --name QuillComprehension-webapp --network jnk-net'
+              args "-u root:sudo -v \$HOME/workspace/myproject:/myproject --name test-comprehension${env.BUILD_TAG} --network jnk-net${env.BUILD_TAG}"
             }
           }
           environment {
@@ -85,7 +85,8 @@ pipeline {
               sh 'bundle install'
               sh 'yarn install'
               echo 'DB:'
-              sh 'cp config/database.yml.jenkins config/database.yml'
+              //sh 'cp config/database.yml.jenkins config/database.yml'
+              sh "config/generate_databaseyml.sh ${env.BUILD_TAG} config/database.yml" 
               sh 'bin/rails db:create'
               sh 'bin/rails db:schema:load'
               echo 'Running rspec'
@@ -96,12 +97,12 @@ pipeline {
             }
           }
         }
-        stage('test-quill-grammar') {
+        stage('test-grammar') {
           agent {
             dockerfile {
               filename 'services/QuillJenkins/agents/Generic/Dockerfile.test-node'
               dir '.'
-              args '-u root:sudo -v $HOME/workspace/myproject:/myproject --name quill-grammar'
+              args "-u root:sudo -v \$HOME/workspace/myproject:/myproject --name test-grammar${env.BUILD_TAG}"
             }
           }
           environment {
@@ -117,12 +118,12 @@ pipeline {
             }
           }
         }
-        stage('test-quill-marking-logic') {
+        stage('test-marking-logic') {
           agent {
             dockerfile {
               filename 'services/QuillJenkins/agents/Generic/Dockerfile.test-node'
               dir '.'
-              args '-u root:sudo -v $HOME/workspace/myproject:/myproject --name quill-marking-logic'
+              args "-u root:sudo -v \$HOME/workspace/myproject:/myproject --name test-marking-logic${env.BUILD_TAG}"
             }
           }
           environment {
@@ -138,12 +139,12 @@ pipeline {
             }
           }
         }
-        stage('test-quill-spellchecker') {
+        stage('test-spellchecker') {
           agent {
             dockerfile {
               filename 'services/QuillJenkins/agents/Generic/Dockerfile.test-node'
               dir '.'
-              args '-u root:sudo -v $HOME/workspace/myproject:/myproject --name quill-spellchecker'
+              args "-u root:sudo -v \$HOME/workspace/myproject:/myproject --name test-spellchecker${env.BUILD_TAG}"
             }
           }
           environment {
@@ -159,12 +160,12 @@ pipeline {
             }
           }
         }
-        stage('test-quill-connect') {
+        stage('test-connect') {
           agent {
             dockerfile {
               filename 'services/QuillJenkins/agents/QuillConnect/Dockerfile.test'
               dir '.'
-              args '-u root:sudo -v $HOME/workspace/myproject:/myproject --name quill-connect'
+              args "-u root:sudo -v \$HOME/workspace/myproject:/myproject --name test-connect${env.BUILD_TAG}"
             }
           }
           environment {
@@ -186,75 +187,74 @@ pipeline {
       agent {
         label 'master'
       }
-      echo "Merging PR if possible..."
-      script {
-        /* only PRs have a change id */
-        if (env.CHANGE_ID) {
-          echo "Automatically merging pull request $env.CHANGE_ID into fake-develop..."
-          echo "Pulling fake-develop..."
+      steps {
+        echo "Merging PR if possible..."
+        script {
+          /* only PRs have a change id */
+          if (env.CHANGE_ID) {
+            echo "Automatically merging pull request $env.CHANGE_ID into fake-develop..."
+            echo "Pulling fake-develop..."
 
-          def quillStaffId='509062'
-          def checkEndpoint="https://api.github.com/repos/empirical-org/Empirical-Core/pulls/${env.CHANGE_ID}"
-          def teamEndpoint="https://api.github.com/teams/${quillStaffId}/members"
-          def payload='{\"commit_title\":\"Merged by jenkins.\", \"commit_message\":\"automatically merged by jenkins.\"}'
-          def mergeEndpoint="https://api.github.com/repos/empirical-org/Empirical-Core/pulls/${env.CHANGE_ID}/merge"
-          def headers = 'Content-Type: application/json'
-          withCredentials([usernamePassword(credentialsId: 'robot-butler', usernameVariable: 'U', passwordVariable: 'T')]) {
-            /* PERFORM MERGE CHECKS */
+            def quillStaffId='509062'
+            def checkEndpoint="https://api.github.com/repos/empirical-org/Empirical-Core/pulls/${env.CHANGE_ID}"
+            def teamEndpoint="https://api.github.com/teams/${quillStaffId}/members"
+            def payload='{\"commit_title\":\"Merged by jenkins.\", \"commit_message\":\"automatically merged by jenkins.\"}'
+            def mergeEndpoint="https://api.github.com/repos/empirical-org/Empirical-Core/pulls/${env.CHANGE_ID}/merge"
+            def headers = 'Content-Type: application/json'
+            withCredentials([usernamePassword(credentialsId: 'robot-butler', usernameVariable: 'U', passwordVariable: 'T')]) {
+              /* PERFORM MERGE CHECKS */
 
-            /* fetch pr */
-            sh "curl -X GET -u ${U}:${T} '${checkEndpoint}' > check"
-            sh 'python -c "import json;f=open(\'check\');j=json.loads(f.read());print(j[\'user\'][\'login\']);f.close()" > tmp'
-            def ghUser = readFile 'tmp'
-            ghUser = ghUser.trim()
-            sh 'python -c "import json;f=open(\'check\');j=json.loads(f.read());print(j[\'mergeable\']);f.close()" > tmp'
-            def mergeable = readFile 'tmp'
-            mergeable = mergeable.trim()
+              /* fetch pr */
+              sh "curl -X GET -u ${U}:${T} '${checkEndpoint}' > check"
+              sh 'python -c "import json;f=open(\'check\');j=json.loads(f.read());print(j[\'user\'][\'login\']);f.close()" > tmp'
+              def ghUser = readFile 'tmp'
+              ghUser = ghUser.trim()
+              sh 'python -c "import json;f=open(\'check\');j=json.loads(f.read());print(j[\'mergeable\']);f.close()" > tmp'
+              def mergeable = readFile 'tmp'
+              mergeable = mergeable.trim()
 
-            sh 'python -c "import json;f=open(\'check\');j=json.loads(f.read());print(j[\'base\'][\'ref\']);f.close()" > tmp'
-            def mergingInto = readFile 'tmp'
-            mergingInto = mergingInto.trim()
+              sh 'python -c "import json;f=open(\'check\');j=json.loads(f.read());print(j[\'base\'][\'ref\']);f.close()" > tmp'
+              def mergingInto = readFile 'tmp'
+              mergingInto = mergingInto.trim()
 
-            /* TODO: for test only, remove */
-            if (mergingInto == 'master') {
-              error('No merging into master in test mode!')
-            }
-
-            /* ensure PR is mergeable */
-            if (!mergeable.equals('True')) {
-              error("Not able to automatically merge branch! exiting.")
-            }
-
-            /* ensure branch to merge into is not master */
-            if (env.CHANGE_BRANCH != 'fake-develop') {
-              if (mergingInto == 'fake-master'){
-                error("Only the 'fake-develop' branch can merge directly into fake-master!")
+              /* TODO: for test only, remove */
+              if (mergingInto == 'master') {
+                error('No merging into master in test mode!')
               }
-            }
 
-            /* ensure user has permission for auto-merged requests */
-            sh "curl -X GET -u ${U}:${T} '${teamEndpoint}' > team"
-            sh "python -c \"import json;f=open('team');j=json.loads(f.read());print('${ghUser}' in [u['login'] for u in j])\" > tmp"
-            def userOk = readFile 'tmp'
-            userOk = userOk.trim()
-            if (userOk != 'True') {
-              error("This user does not have permission to start an automatic merge.")
-            }
+              /* ensure PR is mergeable */
+              if (!mergeable.equals('True')) {
+                error("Not able to automatically merge branch! exiting.")
+              }
 
-            /* MERGE THE PR */
-            sh "curl -X PUT -u ${U}:${T} -H \"${headers}\" -d '${payload}' '${mergeEndpoint}' || exit"
-            echo "Successfully merged PR ${env.CHANGE_BRANCH}."
+              /* ensure branch to merge into is not master */
+              if (env.CHANGE_BRANCH != 'fake-develop') {
+                if (mergingInto == 'fake-master'){
+                  error("Only the 'fake-develop' branch can merge directly into fake-master!")
+                }
+              }
+
+              /* ensure user has permission for auto-merged requests */
+              sh "curl -X GET -u ${U}:${T} '${teamEndpoint}' > team"
+              sh "python -c \"import json;f=open('team');j=json.loads(f.read());print('${ghUser}' in [u['login'] for u in j])\" > tmp"
+              def userOk = readFile 'tmp'
+              userOk = userOk.trim()
+              if (userOk != 'True') {
+                error("This user does not have permission to start an automatic merge.")
+              }
+
+              /* MERGE THE PR */
+              sh "curl -X PUT -u ${U}:${T} -H \"${headers}\" -d '${payload}' '${mergeEndpoint}' || exit"
+              echo "Successfully merged PR ${env.CHANGE_BRANCH}."
+            }
           }
-        }
-        else {
-          echo "Your branch is not fake-master, fake-develop, an open PR, or a branch with an open PR.  Nothing to do."
+          else {
+            echo "Your branch is not fake-master, fake-develop, an open PR, or a branch with an open PR.  Nothing to do."
+          }
         }
       }
     }
     stage('deploy') {
-      agent {
-        label 'master'
-      }
       parallel {
         stage('deploy-lms') {
           agent {
@@ -309,7 +309,7 @@ pipeline {
             dockerfile {
               filename 'services/QuillJenkins/agents/QuillConnect/Dockerfile.deploy'
               dir '.'
-              args '-u root:sudo -v $HOME/workspace/myproject:/myproject --name connect-deploy --network jnk-net'
+              args "-u root:sudo -v \$HOME/workspace/myproject:/myproject --name deploy-connect${env.BUILD_TAG} --network jnk-net${env.BUILD_TAG}"
             }
           }
           environment {
@@ -345,9 +345,9 @@ pipeline {
   post {
     always {
       echo 'Stopping postgres docker container...'
-      sh 'docker stop lms-testdb'
-      sh 'docker rm lms-testdb'
-      sh 'docker network rm jnk-net'
+      sh "docker stop lms-testdb${env.BUILD_TAG}"
+      sh "docker rm lms-testdb${env.BUILD_TAG}"
+      sh "docker network rm jnk-net${env.BUILD_TAG}"
     }
   }
 }
